@@ -15,7 +15,7 @@ import BuySell from './buySell';
 
 function Portfolio(){
     return(
-        <div>
+        <div id = 'portfolio'>
             <Box>
                 <AddSubscription/>
                 <DisplaySubs/>

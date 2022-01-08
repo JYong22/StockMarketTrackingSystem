@@ -207,7 +207,7 @@ app.post('/api/buyStock', (req,res) =>{
             params: {symbol: stock, format: 'json', outputsize: '30'},
             headers: {
                 'x-rapidapi-host': 'twelve-data1.p.rapidapi.com',
-                'x-rapidapi-key': 'cc5061dd2amshd4f8a658b64a56fp1b254djsn33c50d8f23de'
+                'x-rapidapi-key': '***'
             }
         };
         axios.request(options).then(function (response) { //axios request
@@ -292,7 +292,7 @@ app.post('/api/sellStock', (req,res) =>{
                             params: {symbol: stock, format: 'json', outputsize: '30'},
                             headers: {
                                 'x-rapidapi-host': 'twelve-data1.p.rapidapi.com',
-                                'x-rapidapi-key': 'cc5061dd2amshd4f8a658b64a56fp1b254djsn33c50d8f23de'
+                                'x-rapidapi-key': '***'
                             }
                         };
                         axios.request(options).then(function (response) { //axios request
@@ -342,7 +342,7 @@ app.post('/api/addSub', (req,res) =>{
             params: {symbol: stock, format: 'json', outputsize: '30'},
             headers: {
                 'x-rapidapi-host': 'twelve-data1.p.rapidapi.com',
-                'x-rapidapi-key': 'cc5061dd2amshd4f8a658b64a56fp1b254djsn33c50d8f23de'
+                'x-rapidapi-key': '***'
             }
         };
         axios.request(options).then(function (response) { //axios request
@@ -389,6 +389,7 @@ app.delete('/api/deleteSub/:stockName', (req,res) =>{
     if(req.session.user){ //if user session is active
         
         const username = req.session.user[0].username; //username set
+        const stock = req.params.stockName;
         console.log(username);
         db.query(`DELETE FROM subscription WHERE username = '${username}' AND stock = '${stock}';`, //delete sub
             (err,result) =>{
@@ -408,20 +409,35 @@ app.get('/api/subscription', (req,res) =>{
                 result.forEach((v)=>{ //push each stock name into an array
                     arr.push(v.stock);
                 })
-                var options = { //get rid of the brackets for the array and set params to every stock
-                    method: 'GET',
-                    url: 'https://twelve-data1.p.rapidapi.com/price',
-                    params: {symbol: arr.toString().replace("[", "").replace("}", ""), format: 'json', outputsize: '30'}, 
-                    headers: {
-                    'x-rapidapi-host': 'twelve-data1.p.rapidapi.com',
-                    'x-rapidapi-key': 'cc5061dd2amshd4f8a658b64a56fp1b254djsn33c50d8f23de'
-                    }
-                };
+                if (arr === undefined || arr.length == 0){
+                    res.send({});
+                }
+                else{
+                    var options = { //get rid of the brackets for the array and set params to every stock
+                        method: 'GET',
+                        url: 'https://twelve-data1.p.rapidapi.com/price',
+                        params: {symbol: arr.toString().replace("[", "").replace("}", ""), format: 'json', outputsize: '30'}, 
+                        headers: {
+                        'x-rapidapi-host': 'twelve-data1.p.rapidapi.com',
+                        'x-rapidapi-key': '***'
+                        }
+                    };
+                }
                 
                 
                 axios.request(options).then(function (response) {
-                    console.log(response);
-                    res.send(response.data); //send the data
+                
+                    if (response.data.price != null){ //first one
+                        var myObject = {};
+                        var myVar = result[0].stock;
+                        myObject[myVar] = response.data;
+
+                        res.send(myObject);
+                    }
+                    else{
+                        res.send(response.data); //send the data
+
+                    }
                 }).catch(function (error) {
                     console.error(error);
                 });
@@ -449,14 +465,13 @@ app.get('/api/displayStock', (req,res) =>{
                 result.forEach((v)=>{ //push each stock name into an array
                     arr.push(v.stockName);
                 })
-                console.log(arr);
                 var options = { //get rid of the brackets for the array and set params to every stock
                     method: 'GET',
                     url: 'https://twelve-data1.p.rapidapi.com/price',
                     params: {symbol: arr.toString().replace("[", "").replace("}", ""), format: 'json', outputsize: '30'}, 
                     headers: {
                     'x-rapidapi-host': 'twelve-data1.p.rapidapi.com',
-                    'x-rapidapi-key': 'cc5061dd2amshd4f8a658b64a56fp1b254djsn33c50d8f23de'
+                    'x-rapidapi-key': '***'
                     }
                 };
                 
@@ -465,9 +480,16 @@ app.get('/api/displayStock', (req,res) =>{
                     var responseArr = []; //response arr
                 
                     result.forEach((v, index)=>{ 
-                        responseArr.push({"stock": v.stockName, "quantity": v.quantity, "total": (v.quantity*a[index].price)});
+
+                        if (a[index].price == null){
+                            responseArr.push({"stock": v.stockName, "quantity": v.quantity, "total": (v.quantity*a[0])});
+
+                        }
+                        else{
+                            responseArr.push({"stock": v.stockName, "quantity": v.quantity, "total": (v.quantity*a[index].price)});
+                        }
+                        
                     })
-                    console.log(responseArr);
                     res.json(responseArr);
                 }).catch(function (error) {
                     console.error(error);
